@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.sparse import diags
 import numpy
-
+import time
+import matplotlib.pyplot as plt
 
 def generate_safe_system(n):
     """
@@ -86,26 +87,172 @@ def determinant(A):
 
     return det_L * det_U
 
-Atry, btry, x = generate_safe_system(3)
-determinantL, determinantU = determinant(Atry)
+def system_size(A, b):
+    if A.ndim != 2:
+        raise ValueError(f"Matrix A must be 2D, but got {A.ndim}D array")
+
+    n, m = A.shape
+    if n != m:
+        raise ValueError(f"Matrix A must be square, but got A.shape={A.shape}")
+
+    if b.shape[0] != n:
+        raise ValueError(
+            f"System shapes are not compatible: A.shape={A.shape}, "
+            f"b.shape={b.shape}"
+        )
+
+    return n
+
+def row_swap(A, b, p, q):
+    n = system_size(A, b)
+    # swap rows of A
+    for j in range(n):
+        A[p, j], A[q, j] = A[q, j], A[p, j]
+    # swap rows of b
+    b[p, 0], b[q, 0] = b[q, 0], b[p, 0]
+
+def row_scale(A, b, p, k):
+    n = system_size(A, b)
+
+    # scale row p of A
+    for j in range(n):
+        A[p, j] = k * A[p, j]
+    # scale row p of b
+    b[p, 0] = b[p, 0] * k
+
+def row_add(A, b, p, k, q):
+    n = system_size(A, b)
+
+    # Perform the row operation
+    for j in range(n):
+        A[p, j] = A[p, j] + k * A[q, j]
+
+    # Update the corresponding value in b
+    b[p, 0] = b[p, 0] + k * b[q, 0]
+
+def gaussian_elimination(A, b, verbose=False):
+     # find shape of system
+    n = system_size(A, b)
+
+    # perform forwards elimination
+    for i in range(n - 1):
+        # eliminate column i
+        if verbose:
+            print(f"eliminating column {i}")
+        for j in range(i + 1, n):
+            # row j
+            factor = A[j, i] / A[i, i]
+            if verbose:
+                print(f"  row {j} |-> row {j} - {factor} * row {i}")
+            row_add(A, b, j, -factor, i)
+
+
+def forward_substitution(A, b):
+    # get size of system
+    n = system_size(A, b)
+
+    # check is lower triangular
+    if not np.allclose(A, np.tril(A)):
+        raise ValueError("Matrix A is not lower triangular")
+
+    # create solution variable
+    x = np.empty_like(b)
+
+    # perform forwards solve
+    for i in range(n):
+        partial_sum = 0.0
+        for j in range(0, i):
+            partial_sum += A[i, j] * x[j]
+        x[i] = 1.0 / A[i, i] * (b[i] - partial_sum)
+
+    return x
+
+def backward_substitution(A, b):
+    n = system_size(A, b)
+
+    # check is upper triangular
+    assert np.allclose(A, np.triu(A))
+
+    # create solution variable
+    x = np.empty_like(b)
+
+    # perform backwards solve
+    for i in range(n - 1, -1, -1):  # iterate over rows backwards
+        partial_sum = 0.0
+        for j in range(i + 1, n):
+            partial_sum += A[i, j] * x[j]
+        x[i] = 1.0 / A[i, i] * (b[i] - partial_sum)
+
+    return x
+
+def lu_factorization_graph(A, b):
+    L, U = lu_factorisation(A)
+    y = forward_substitution(L, b)
+    x = backward_substitution(U, y)
+
+    return x
+
+#Atry, btry, x = generate_safe_system(3)
+
+#graceA = np.array([[4,2,0],[2,3,1],[0,1,2.5]])
+'''
+print(Atry)
+L, U = lu_factorisation(Atry)
+
+print("This is my Matrix U (Upper triangular)")
+print(U)
+print("This is my matrix L (Lower triangular)")
+print(L)
+print("\n")
+
+print("This shows that L x U = A")
+if (np.allclose(L @ U, Atry)):
+    print(L ,"x", U ,"=", L@U)
+    print("This is my origianl Matrix: ", Atry)
+
+result = determinant(Atry)
+print(result)
 
 '''
-    
-    print(Atry)
-    L, U = lu_factorisation(Atry)
 
-    print("This is my Matrix U (Upper triangular)")
-    print(U)
-    print("This is my matrix L (Lower triangular)")
-    print(L)
-    print("\n")
 
-    print("This shows that L x U = A")
-    if (np.allclose(L @ U, Atry)):
-        print(L ,"x", U ,"=", L@U)
-        print("This is my origianl Matrix: ", Atry)
 
-'''
+
+
+sizes = [2**j for j in range(1, 6)]
+times_lu = []
+times_gauss = []
+
+for n in sizes:
+    # generate a random system of linear equations of size n
+    A, b, x = generate_safe_system(n)
+
+    # do the solve
+    start_time = time.time()
+    lu_factorization_graph(A, b)
+    end_time = time.time()
+    times_lu.append(end_time - start_time)
+
+    start_time2 = time.time()
+    gaussian_elimination(A, b)
+    end_time2 = time.time()
+    times_gauss.append(end_time2 - start_time2)
+
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(sizes, times_lu, marker='o', label='LU Factorization Version', linewidth=2)
+plt.plot(sizes, times_gauss, marker='s', label='Gaussian Elimination Version', linewidth=2)
+
+plt.title("LU Factorization VS Gaussian Elimination")
+plt.xlabel("Matrix Size: ")
+plt.ylabel("Execution Time (in seconds):")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+plt.savefig("luVSguassgraph.png")
 
 
 
