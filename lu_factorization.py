@@ -33,44 +33,32 @@ def generate_safe_system(n):
 
 def lu_factorisation(A):
 
-    
+    rows = A.shape[0]
+
     n, m = A.shape
     if n != m:
         raise ValueError(f"Matrix A is not square {A.shape=}")
 
     # construct arrays of zeros
     L, U = np.zeros_like(A), np.zeros_like(A)
+
     #filling all diagonal values to 1 in L matrix
     np.fill_diagonal(L, 1)
 
-    #creating an augmented matrix
-    #solving for upper trianglular
-
-    rows = A.shape[0]
-    i = 0
-    secondA = A.copy()
-    while i < rows: # iterating through columns
-        if secondA[i][i] == 0.0: #checking if the diagonal entry is zero
-           print ("Diagonal Entry is Zero")
-           return
-     
-        for j in range (i+1, rows): #iterate rows
-
-            multiplier = secondA[j][i] / secondA[i][i]
-
-
-            secondA[j] = secondA[j] - (multiplier * secondA[i]) #this makes a particular val under the diagonal zero
-            print("This is iteration ", j) #keeping track of iter
-            print(secondA)
-
-            #this section I am making L , putting the multipler values
-             
-            L[j][i] = multiplier
+    for j in range(rows): #for the coloumns iterating through
+        for i in range(j+1): #iterating for the U
+      # Compute factors u_{ij}
             
-        i += 1
+            mysumU = sum(L[i,k] * U[k,j] for k in range(i)) #calculating the dot product of the current elemets of L and U so we know what to subtract
+            U[i,j] = A[i,j] - mysumU #subtracting the calculated sum from the matrix A to get that element of U 
+            
 
-        U = secondA.copy()
-    
+        for i in range(j+1, n): #iterating for the L
+      # Compute factors l_{ij}
+            
+            mysumL = sum(L[i,k] * U[k,j] for k in range(i)) #calculating dot product again for getting elements of L
+            L[i,j] = (A[i,j] - mysumL)/U[j,j] #this is us placing the multiplier in the current positin for L
+
     return(L, U)
 
 
@@ -192,12 +180,12 @@ def lu_factorization_graph(A, b):
 
     return x
 
-#Atry, btry, x = generate_safe_system(3)
+Atry, btry, x = generate_safe_system(3)
 
 #graceA = np.array([[4,2,0],[2,3,1],[0,1,2.5]])
 '''
 print(Atry)
-L, U = lu_factorisation(Atry)
+
 
 print("This is my Matrix U (Upper triangular)")
 print(U)
@@ -210,14 +198,16 @@ if (np.allclose(L @ U, Atry)):
     print(L ,"x", U ,"=", L@U)
     print("This is my origianl Matrix: ", Atry)
 
+
+
+'''
+L, U = lu_factorisation(Atry)
 result = determinant(Atry)
 print(result)
 
+
+
 '''
-
-
-
-
 
 sizes = [2**j for j in range(1, 6)]
 times_lu = []
@@ -254,5 +244,5 @@ plt.show()
 
 plt.savefig("luVSguassgraph.png")
 
-
+'''
 
