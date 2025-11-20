@@ -180,7 +180,7 @@ def lu_factorization_graph(A, b):
 
     return x
 
-Atry, btry, x = generate_safe_system(3)
+Atry, btry, x = generate_safe_system(100)
 
 #graceA = np.array([[4,2,0],[2,3,1],[0,1,2.5]])
 '''

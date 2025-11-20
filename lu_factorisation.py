@@ -15,13 +15,16 @@ def lu_factorisation(A):
     for j in range(rows): #for the coloumns iterating through
         for i in range(j+1): #iterating for the U
         # Compute factors u_{ij}
-            mysumU = sum(L[i,k] * U[k,j] for k in range(i)) #calculating the dot product of the current elemets of L and U so we know what to subtract
-            U[i,j] = A[i,j] - mysumU #subtracting the calculated sum from the matrix A to get that element of U 
-            
+            mysumU = sum(L[i,k] * U[k,j] for k in range(rows)) #calculating the dot product of the current elemets of L and U so we know what to subtract
+            if L[i,j] != 0: #handling the zero
+                U[i,j] = (A[i,j] - mysumU)/L[i,j] #subtracting the calculated sum from the matrix A to get that element of U 
+            else:
+                U[i,j] = (A[i,j] - mysumU)
 
-        for i in range(j+1, n): #iterating for the L
+
+        for i in range(j+1, rows): #iterating for the L
         # Compute factors l_{ij}
-            mysumL = sum(L[i,k] * U[k,j] for k in range(i)) #calculating dot product again for getting elements of L
+            mysumL = sum(L[i,k] * U[k,j] for k in range(rows)) #calculating dot product again for getting elements of L
             L[i,j] = (A[i,j] - mysumL)/U[j,j] #this is us placing the multiplier in the current positin for L
 
     return(L, U)
